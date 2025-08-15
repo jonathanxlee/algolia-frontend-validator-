@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Algolia Front End Validator",
+  "version": "1.0.0",
+  "description": "Validate Algolia Search and Insights implementations using browser traffic",
+  "permissions": [
+    "storage",
+    "debugger"
+  ],
+  "host_permissions": [
+    "https://*.algolia.net/*",
+    "https://*.algolianet.com/*",
+    "https://insights.algolia.io/*",
+    "https://insights.us.algolia.io/*",
+    "https://insights.de.algolia.io/*"
+  ],
+  "background": {
+    "service_worker": "src/background/index.ts"
+  },
+  "devtools_page": "src/devtools/index.html",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self';"
+  },
+  "web_accessible_resources": [],
+  "minimum_chrome_version": "88"
+}
