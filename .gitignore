@@ -33,6 +33,10 @@ build/
 ehthumbs.db
 Thumbs.db
 
+# Cursor and PRD folders
+.cursor/
+PRD/
+
 # Logs
 logs
 *.log
