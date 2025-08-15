@@ -14,7 +14,7 @@ import { SearchRequest, EventRequest } from '../devtools/types'
  */
 class BackgroundServiceWorker {
   private debuggerConnections: Map<number, boolean> = new Map()
-  private requestDataStore: Map<string, { request: any; postData?: any }> = new Map()
+  private requestDataStore: Map<string, { request: any; postData?: any; timestamp: number }> = new Map()
 
   constructor() {
     this.setupMessageListeners()
@@ -103,8 +103,12 @@ class BackgroundServiceWorker {
           return
         }
         
-        // Store request data
-        this.requestDataStore.set(requestKey, { request, postData })
+        // Store request data with timestamp
+        this.requestDataStore.set(requestKey, { 
+          request, 
+          postData,
+          timestamp: Date.now() // Capture actual request time
+        })
         
         // Send message to DevTools panel
         this.notifyDevTools('ALGOLIA_REQUEST_DETECTED', {
@@ -130,7 +134,8 @@ class BackgroundServiceWorker {
                 requestId,
                 url: requestData.request.url,
                 responseBody: responseBody.body,
-                requestData
+                requestData,
+                timestamp: requestData.timestamp
               })
             }
           })
@@ -139,7 +144,8 @@ class BackgroundServiceWorker {
           this.notifyDevTools('ALGOLIA_INSIGHTS_REQUEST', {
             requestId,
             url: requestData.request.url,
-            requestData
+            requestData,
+            timestamp: requestData.timestamp
           })
         }
       }

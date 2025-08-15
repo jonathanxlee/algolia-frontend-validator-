@@ -123,6 +123,29 @@ export function extractIndices(parsedParams: any, urlIndices: string[]): string[
 }
 
 /**
+ * Extract index names from URL path
+ */
+export function extractIndicesFromUrl(url: string): string[] {
+  try {
+    // Pattern: /1/indexes/{indexName}/query or /1/indexes/{indexName}/queries
+    const urlMatch = url.match(/\/1\/indexes\/([^\/]+)\/(query|queries)/)
+    if (urlMatch) {
+      return [decodeURIComponent(urlMatch[1])]
+    }
+    
+    // Alternative pattern: /1/indexes/{indexName}
+    const altMatch = url.match(/\/1\/indexes\/([^\/\?]+)/)
+    if (altMatch) {
+      return [decodeURIComponent(altMatch[1])]
+    }
+  } catch (error) {
+    console.log('[DEBUG] Error extracting indices from URL:', error)
+  }
+  
+  return []
+}
+
+/**
  * Extract query ID from response body
  */
 export function extractQueryId(responseBody: string): string | undefined {

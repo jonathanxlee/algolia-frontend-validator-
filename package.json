@@ -8,7 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "rebuild": "npm run clean && npm run build"
+    "rebuild": "npm run clean && npm run build",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "keywords": [
     "algolia",
@@ -30,6 +32,7 @@
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0",
     "@types/chrome": "^0.0.260",
+    "@types/jest": "^30.0.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
@@ -43,7 +46,9 @@
     "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "jest": "^30.0.5",
     "prettier": "^3.2.5",
+    "ts-jest": "^29.4.1",
     "typescript": "^5.3.3",
     "vite": "^5.1.0"
   },

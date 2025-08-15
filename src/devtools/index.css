@@ -696,60 +696,308 @@ body {
   border-radius: 0;
 }
 
-/* Multi-query row styling */
-.multi-query-first {
-  background: #f0f9ff !important;
-  border-left: 3px solid #3b82f6;
+
+
+/* Card-based layout styles */
+.traffic-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
 }
 
-.multi-query-first:hover {
-  background: #e0f2fe !important;
-}
-
-.multi-query-middle {
-  background: #f8fafc !important;
-  border-left: 3px solid #3b82f6;
-}
-
-.multi-query-middle:hover {
-  background: #f1f5f9 !important;
-}
-
-.multi-query-last {
-  background: #f0f9ff !important;
-  border-left: 3px solid #3b82f6;
-}
-
-.multi-query-last:hover {
-  background: #e0f2fe !important;
-}
-
-/* Detail row styling for multi-query */
-.detail-row.multi-query-first,
-.detail-row.multi-query-middle,
-.detail-row.multi-query-last {
-  border-left: 3px solid #3b82f6;
-}
-
-/* Batch grouping visual enhancement */
-.multi-query-first .batch-connector {
-  box-shadow: 0 0 0 1px #3b82f6;
-}
-
-.multi-query-last .batch-connector {
-  box-shadow: 0 0 0 1px #3b82f6;
-}
-
-/* Hover effects for batch rows */
-.expandable-row:hover.multi-query-first,
-.expandable-row:hover.multi-query-middle,
-.expandable-row:hover.multi-query-last {
-  background: #e0f2fe !important;
-}
-
-/* Ensure expand button is properly positioned */
-.multi-query-indicator .expand-button {
+/* Batch group container for side-by-side layout */
+.batch-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin-bottom: 12px;
   position: relative;
+}
+
+/* Vertical connector line that spans the entire batch group */
+.batch-group::before {
+  content: '';
+  position: absolute;
+  left: 4px; /* Position right after the 4px blue line header */
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background: #3b82f6;
   z-index: 1;
+  border-radius: 0;
+}
+
+/* Container for batch items (searches and events) */
+.batch-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
   margin-left: 8px;
 }
+
+.search-card,
+.event-card {
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.search-card:hover,
+.event-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12);
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  cursor: pointer;
+  gap: 16px;
+  transition: background-color 0.15s ease;
+  min-height: 80px;
+}
+
+.card-header:hover {
+  background-color: #f8fafc;
+}
+
+.card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  flex-shrink: 0;
+  color: #64748b;
+}
+
+.card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.request-type,
+.event-type {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 14px;
+  letter-spacing: -0.025em;
+}
+
+.batch-position {
+  font-size: 12px;
+  color: #64748b;
+  background: #e2e8f0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.index-name,
+.event-name {
+  font-size: 13px;
+  color: #475569;
+  background: #f8fafc;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+}
+
+.card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.query-text,
+.event-details {
+  font-size: 13px;
+  color: #1e293b;
+  font-weight: 500;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.query-params {
+  font-size: 11px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 6px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.event-objects {
+  font-size: 11px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 6px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.query-id,
+.user-token {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  background: #f8fafc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  display: inline-block;
+  width: fit-content;
+}
+
+.time {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.card-status {
+  flex-shrink: 0;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.status-badge.valid {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.status-badge.missing {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.card-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.card-details-panel {
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+/* Action buttons */
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.action-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.action-btn.primary {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.action-btn.primary:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+/* Level-based indentation for hierarchy */
+.search-card.level-1,
+.event-card.level-1 {
+  margin-left: 8px; /* Reduced since we have the main connector line */
+}
+
+.search-card.level-2,
+.event-card.level-2 {
+  margin-left: 16px; /* Reduced since we have the main connector line */
+}
+
+/* Batch visual indicators */
+.search-card[data-batch-id] {
+  position: relative;
+}
+
+.search-card[data-batch-id]:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 100%;
+  width: 3px;
+  height: 8px;
+  background: #3b82f6;
+}
+
+/* Multi-query batch header - simplified to just a blue line */
+.batch-header {
+  background: #3b82f6;
+  width: 4px;
+  min-height: 40px;
+  flex-shrink: 0;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+
+
+

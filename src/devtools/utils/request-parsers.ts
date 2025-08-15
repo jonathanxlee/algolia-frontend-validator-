@@ -2,7 +2,7 @@
  * Request parsing logic for different types of Algolia requests
  */
 
-import type { SearchRequest, EventRequest } from '../../shared/types'
+import type { SearchRequest, EventRequest } from '../types'
 import {
   extractRequestBody,
   parseRequestParams,
@@ -10,6 +10,7 @@ import {
   extractUserToken,
   extractClickAnalytics,
   extractIndices,
+  extractIndicesFromUrl,
   extractQueryId,
   extractHitsSample,
   generateRequestId,
@@ -22,7 +23,8 @@ import {
 export function parseSearchRequest(
   request: any,
   responseBody: string,
-  appId: string
+  appId: string,
+  timestamp?: number
 ): SearchRequest | SearchRequest[] | null {
   try {
     console.log('[DEBUG] parseSearchRequest called with:', {
@@ -43,10 +45,10 @@ export function parseSearchRequest(
     // Check if this is a multi-request format
     if (isMultiRequestFormat(parsedParams)) {
       console.log('[DEBUG] Multi-request format detected')
-      return parseMultiSearchRequest(request, responseBody, parsedParams, appId)
+      return parseMultiSearchRequest(request, responseBody, parsedParams, appId, timestamp)
     } else {
       console.log('[DEBUG] Single request format detected')
-      return parseSingleSearchRequest(request, responseBody, parsedParams, appId)
+      return parseSingleSearchRequest(request, responseBody, parsedParams, appId, timestamp)
     }
   } catch (error) {
     console.error('[ERROR] Failed to parse search request:', error)
@@ -61,7 +63,8 @@ function parseSingleSearchRequest(
   request: any,
   responseBody: string,
   parsedParams: any,
-  appId: string
+  appId: string,
+  timestamp?: number
 ): SearchRequest {
   // Extract request body for rawRequestBody
   const requestBody = extractRequestBody(request.postData)
@@ -69,7 +72,8 @@ function parseSingleSearchRequest(
   // Extract data using helper functions
   const userToken = extractUserToken(request, parsedParams)
   const clickAnalytics = extractClickAnalytics(parsedParams)
-  const indices = extractIndices(parsedParams, [])
+  // For single requests, extract indices from URL since they're not in the request body
+  const indices = extractIndicesFromUrl(request.url)
   const queryId = extractQueryId(responseBody)
   const hitsSample = extractHitsSample(responseBody)
 
@@ -83,7 +87,7 @@ function parseSingleSearchRequest(
 
   return {
     id: generateRequestId('search'),
-    time: new Date().toISOString(),
+    time: timestamp ? new Date(timestamp).toISOString() : new Date().toISOString(),
     requestId: request.requestId || generateRequestId('req'),
     url: request.url,
     method: request.method as 'POST' | 'GET',
@@ -110,7 +114,8 @@ function parseMultiSearchRequest(
   request: any,
   responseBody: string,
   parsedParams: any,
-  appId: string
+  appId: string,
+  timestamp?: number
 ): SearchRequest[] {
   const requests = parsedParams.requests
   const batchId = generateBatchId()
@@ -162,7 +167,7 @@ function parseMultiSearchRequest(
       
       const searchData: SearchRequest = {
         id: generateRequestId('search'),
-        time: new Date().toISOString(),
+        time: timestamp ? new Date(timestamp).toISOString() : new Date().toISOString(),
         requestId: request.requestId || generateRequestId('req'),
         url: request.url,
         method: request.method as 'POST' | 'GET',
@@ -197,7 +202,8 @@ function parseMultiSearchRequest(
  */
 export function parseInsightsRequest(
   request: any,
-  responseBody: string
+  responseBody: string,
+  timestamp?: number
 ): EventRequest | null {
   try {
     console.log('[DEBUG] parseInsightsRequest called with:', {
@@ -280,7 +286,7 @@ export function parseInsightsRequest(
     
     const eventRequest: EventRequest = {
       id: generateRequestId('event'),
-      time: new Date().toISOString(),
+      time: timestamp ? new Date(timestamp).toISOString() : new Date().toISOString(),
       requestId: request.requestId || generateRequestId('req'),
       url: request.url,
       type: eventType,

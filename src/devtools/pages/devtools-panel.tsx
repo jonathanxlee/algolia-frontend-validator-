@@ -73,7 +73,7 @@ export function DevToolsPanel() {
           }
           
           // Process insights request
-          const eventData = parseInsightsRequest(requestData.request, requestData.postData || '{}')
+          const eventData = parseInsightsRequest(requestData.request, requestData.postData || '{}', data.timestamp)
           if (eventData) {
             addEvent(activeTabId!, eventData)
             processedRequests.add(duplicateKey)
@@ -94,7 +94,7 @@ export function DevToolsPanel() {
           const appId = url.hostname.split('.')[0]
           
           // Process search request
-          const searchResult = parseSearchRequest(requestData.request, responseBody, appId)
+          const searchResult = parseSearchRequest(requestData.request, responseBody, appId, data.timestamp)
           if (searchResult) {
             if (Array.isArray(searchResult)) {
               searchResult.forEach((searchData) => {
