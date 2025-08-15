@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { useAppStore } from '../../store'
-import type { TrafficItem } from '../../shared/types'
+import type { TrafficItem } from '../types'
 import { Search, AlertTriangle, ChevronRight, Filter, X } from 'lucide-react'
 import { DetailPanel } from './detail-panel'
 
@@ -165,6 +165,7 @@ export function LiveTraffic() {
                 <th style={{ width: '40px' }}></th>
                 <th>Type</th>
                 <th>Index</th>
+                <th>Query/Event Type</th>
                 <th>Query ID</th>
                 <th>User Token</th>
                 <th>Time</th>
@@ -172,7 +173,7 @@ export function LiveTraffic() {
               </tr>
             </thead>
             <tbody className="table-body">
-              {filteredTraffic.map((item, index) => {
+              {filteredTraffic.map((item) => {
                 // Check if this is part of a multi-query batch
                 const isMultiQuery = 'appId' in item && item.isMultiRequest && item.batchId
                 const isFirstInBatch = Boolean(isMultiQuery && item.requestIndex === 0)
@@ -212,6 +213,9 @@ export function LiveTraffic() {
                       <td>
                         {getIndexDisplay(item)}
                       </td>
+                      <td>
+                        {getQueryOrEventTypeDisplay(item)}
+                      </td>
                       <td className="mono">
                         {getQueryIdDisplay(item)}
                       </td>
@@ -227,7 +231,7 @@ export function LiveTraffic() {
                     </tr>
                     {expandedRows.has(item.id) && (
                       <tr className={`detail-row ${getMultiQueryRowClass(item, isFirstInBatch, isLastInBatch, isMiddleInBatch)}`}>
-                        <td colSpan={7} style={{ padding: 0 }}>
+                        <td colSpan={8} style={{ padding: 0 }}>
                           <DetailPanel item={item} />
                         </td>
                       </tr>
@@ -275,6 +279,27 @@ function getIndexDisplay(item: TrafficItem) {
     return Array.isArray(item.indices) ? item.indices.join(', ') : String(item.indices || 'unknown')
   } else {
     return String(item.index || 'unknown')
+  }
+}
+
+function getQueryOrEventTypeDisplay(item: TrafficItem) {
+  if ('appId' in item) {
+    // For search requests, show the actual query if available
+    if (item.params) {
+      try {
+        const params = JSON.parse(item.params)
+        if (params.query) {
+          return params.query.length > 30 ? params.query.substring(0, 30) + '...' : params.query
+        }
+      } catch {
+        // If parsing fails, show a truncated version of params
+        return item.params.length > 30 ? item.params.substring(0, 30) + '...' : item.params
+      }
+    }
+    return 'Search'
+  } else {
+    // For events, show the event type prominently
+    return item.type ? item.type.charAt(0).toUpperCase() + item.type.slice(1) : 'Event'
   }
 }
 
