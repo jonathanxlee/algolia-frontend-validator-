@@ -45,65 +45,73 @@ export function LiveTraffic() {
     setExpandedRows(newExpanded)
   }
 
-  // Function to render traffic items with proper batch grouping
-  const renderTrafficItems = () => {
+  // Helper function to generate a unique key for an item
+  const generateItemKey = (item: GroupedTrafficItem, index: number): string => {
+    if (item.type === 'search') {
+      const search = item.item as any
+      return `search-${search.ts}-${search.url}`
+    }
+    if (item.type === 'event') {
+      const event = item.item as any
+      return `event-${event.id}`
+    }
+    if (item.type === 'batch-header') {
+      const header = item.item as any
+      return `batch-${header.batchId}`
+    }
+    return `item-${index}`
+  }
+
+  // Main function to render all traffic items
+  const renderTrafficItems = (): React.ReactNode[] => {
     const items: React.ReactNode[] = []
-    let i = 0
-    
-    while (i < filteredTraffic.length) {
-      const item = filteredTraffic[i]
-      
-      if (item.type === 'batch-header') {
-        // Collect all items in this batch
+    let currentIndex = 0
+
+    while (currentIndex < filteredTraffic.length) {
+      const currentItem = filteredTraffic[currentIndex]
+
+      if (currentItem.type === 'batch-header') {
+        // Handle batch group - collect all items that belong to this batch
+        const header = currentItem.item as { batchId: string; count: number }
         const batchItems: GroupedTrafficItem[] = []
-        let j = i + 1
         
-        // Type guard for batch header
-        if (item.type === 'batch-header' && 'batchId' in item.item && 'count' in item.item) {
-          const batchHeader = item.item as { batchId: string; count: number }
-          
-          while (j < filteredTraffic.length && 
-                 filteredTraffic[j].type !== 'batch-header' && 
-                 filteredTraffic[j].batchId === batchHeader.batchId) {
-            batchItems.push(filteredTraffic[j])
-            j++
-          }
-          
-          // Render batch group
-          items.push(
-            <BatchGroup
-              key={`batch-${batchHeader.batchId}`}
-              batchId={batchHeader.batchId}
-              count={batchHeader.count}
-              items={batchItems}
-              expandedRows={expandedRows}
-              onToggle={toggleRow}
-            />
-          )
+        // Move to next item after header
+        currentIndex++
+        
+        // Collect all items that belong to this batch (until we hit another batch header)
+        while (currentIndex < filteredTraffic.length && 
+               filteredTraffic[currentIndex].type !== 'batch-header' && 
+               filteredTraffic[currentIndex].batchId === header.batchId) {
+          batchItems.push(filteredTraffic[currentIndex])
+          currentIndex++
         }
-        
-        i = j // Skip to after the batch
+
+        // Render the batch group
+        items.push(
+          <BatchGroup
+            key={`batch-${header.batchId}`}
+            batchId={header.batchId}
+            count={header.count}
+            items={batchItems}
+            expandedRows={expandedRows}
+            onToggle={toggleRow}
+          />
+        )
       } else {
-        // Render individual item
-        // Create a unique key for each item
-        const itemKey = item.type === 'search' 
-          ? `search-${(item.item as any).ts}-${(item.item as any).url}`
-          : item.type === 'event'
-          ? `event-${(item.item as any).id}`
-          : `item-${i}`
-        
+        // Handle individual item
+        const itemKey = generateItemKey(currentItem, currentIndex)
         items.push(
           <TrafficCard
             key={itemKey}
-            item={item}
+            item={currentItem}
             isExpanded={expandedRows.has(itemKey)}
             onToggle={() => toggleRow(itemKey)}
           />
         )
-        i++
+        currentIndex++
       }
     }
-    
+
     return items
   }
 
@@ -138,8 +146,6 @@ export function LiveTraffic() {
             {filteredTraffic.length} of {activeTab.searches.length + activeTab.events.length} requests
           </p>
         </div>
-        
-
       </div>
       
       {filteredTraffic.length === 0 ? (

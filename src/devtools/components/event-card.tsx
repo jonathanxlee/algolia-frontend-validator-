@@ -1,98 +1,106 @@
-import React from 'react'
-import { ChevronDown, ChevronRight, Activity } from 'lucide-react'
+import React, { useState } from 'react'
+import { MousePointer, Eye, TrendingUp, ChevronDown, ChevronRight } from 'lucide-react'
 import type { InsightsEvent } from '../types'
-import { DetailPanel } from '../pages/detail-panel'
 
 interface EventCardProps {
-  event: InsightsEvent
-  isExpanded: boolean
-  onToggle: () => void
-  level: number
-  parentQueryId?: string | null
-  batchId?: string | null
-  isLastInGroup: boolean
+  event: InsightsEvent & {
+    requestTime: string
+    requestUrl: string
+    requestHeaders: Record<string, string>
+  }
 }
 
-export function EventCard({ 
-  event, 
-  isExpanded, 
-  onToggle, 
-  level, 
-  parentQueryId, 
-  batchId, 
-  isLastInGroup 
-}: EventCardProps) {
-  const hasQueryId = !!event.queryID
-  const hasUserToken = !!event.userToken
+export function EventCard({ event }: EventCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
   
+  const getEventIcon = (eventType: string) => {
+    switch (eventType) {
+      case 'click':
+        return <MousePointer size={16} />
+      case 'view':
+        return <Eye size={16} />
+      case 'conversion':
+        return <TrendingUp size={16} />
+      default:
+        return <MousePointer size={16} />
+    }
+  }
+
+  const getEventColor = (eventType: string) => {
+    switch (eventType) {
+      case 'click':
+        return '#3b82f6' // blue
+      case 'view':
+        return '#6b7280' // gray
+      case 'conversion':
+        return '#10b981' // green
+      default:
+        return '#6b7280'
+    }
+  }
+
+  const toggleExpanded = () => setIsExpanded(!isExpanded)
+
   return (
-    <div 
-      className={`event-card level-${level}`}
-      style={{ marginLeft: `${level * 20}px` }}
-    >
-      <div className="card-header" onClick={onToggle}>
-        <div className="card-icon">
-          <Activity className="w-4 h-4" />
-        </div>
-        
+    <div className="event-card">
+      <div className="card-header" onClick={toggleExpanded}>
         <div className="card-content">
           <div className="card-title">
-            <span className="event-type">
-              {event.eventType.charAt(0).toUpperCase() + event.eventType.slice(1)}
-            </span>
-            <span className="event-name">
-              {event.eventName}
-            </span>
-            <span className="index-name">
-              {event.index}
-            </span>
+            <div className="title-with-icon">
+              <div className="header-icon-container" style={{ backgroundColor: getEventColor(event.eventType) }}>
+                {getEventIcon(event.eventType)}
+              </div>
+              <span className="event-type" style={{ color: getEventColor(event.eventType) }}>
+                {event.eventType.toUpperCase()}
+              </span>
+              <span className="event-name">{event.eventName}</span>
+            </div>
           </div>
           
           <div className="card-details">
-            <div className="event-details">
-              <strong>{event.eventType.charAt(0).toUpperCase() + event.eventType.slice(1)}</strong> "{event.eventName}"
-            </div>
-            {event.objectIDs && event.objectIDs.length > 0 && (
-              <div className="event-objects">
-                Object IDs: {event.objectIDs.slice(0, 3).join(', ')}
-                {event.objectIDs.length > 3 && ` (+${event.objectIDs.length - 3} more)`}
-              </div>
+            <span className="index-name">{event.index}</span>
+            {event.queryID && (
+              <span className="query-id">Query ID: {event.queryID}</span>
             )}
-            <span className="query-id">
-              Query ID: {hasQueryId ? event.queryID : 'missing'}
-            </span>
-            <span className="user-token">
-              User Token: {hasUserToken ? event.userToken : 'missing'}
-            </span>
+            {event.userToken && (
+              <span className="user-token">User: {event.userToken}</span>
+            )}
             <span className="time">
-              {new Date(event.eventTs || Date.now()).toLocaleTimeString()}
+              {new Date(event.requestTime).toLocaleTimeString()}
             </span>
           </div>
         </div>
         
-        <div className="card-status">
-          <span className={`status-badge ${hasQueryId ? 'valid' : 'missing'}`}>
-            {hasQueryId ? 'Valid' : 'Missing Query ID'}
-          </span>
-        </div>
-        
         <div className="card-toggle">
-          <ChevronDown className="w-4 h-4" />
+          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </div>
-      </div>
-      
-      <div className="card-actions">
-        <button className="action-btn">
-          + Expect
-        </button>
-        <button className="action-btn primary" onClick={onToggle}>
-          Details
-        </button>
       </div>
       
       {isExpanded && (
         <div className="card-details-panel">
-          <DetailPanel item={event} />
+          <div className="event-details">
+            <div className="detail-row">
+              <strong>Object IDs:</strong>
+              <span>{event.objectIDs.join(', ')}</span>
+            </div>
+            
+            {event.positions && event.positions.length > 0 && (
+              <div className="detail-row">
+                <strong>Positions:</strong>
+                <span>{event.positions.join(', ')}</span>
+              </div>
+            )}
+            
+            <div className="detail-row">
+              <strong>Request URL:</strong>
+              <span className="url">{event.requestUrl}</span>
+            </div>
+            
+            <div className="detail-row">
+              <strong>Event Time:</strong>
+              <span>{new Date(event.eventTs || event.requestTime).toLocaleString()}</span>
+            </div>
+          </div>
         </div>
       )}
     </div>

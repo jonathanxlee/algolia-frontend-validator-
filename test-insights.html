@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Algolia Insights Event</title>
+</head>
+<body>
+    <h1>Test Algolia Insights Event</h1>
+    <p>This page will send an Insights event to test the extension's capture.</p>
+    
+    <button id="sendEvent">Send Test Event</button>
+    <div id="status"></div>
+
+    <script>
+        document.getElementById('sendEvent').addEventListener('click', async () => {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = 'Sending event...';
+            
+            try {
+                const response = await fetch('https://insights.algolia.io/1/events?X-Algolia-Application-Id=SO4W5FF9LB&X-Algolia-API-Key=5a93654820ff5d17abd47b2b2bd9df59&X-Algolia-Agent=insights-js%20(2.16.3)%3B%20insights-js-browser-umd%20(2.16.3)%3B%20Shopify%20Web%20Pixels', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=UTF-8',
+                        'sec-ch-ua-platform': '"macOS"',
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+                        'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"',
+                        'sec-ch-ua-mobile': '?0'
+                    },
+                    body: JSON.stringify({
+                        "events": [{
+                            "eventType": "conversion",
+                            "eventSubtype": "addToCart",
+                            "index": "shopify_us_live_products",
+                            "objectIDs": ["53973131624808"],
+                            "currency": "USD",
+                            "eventName": "Add To Cart",
+                            "userToken": "rg9lsibrnn6hullb7kea"
+                        }]
+                    })
+                });
+                
+                if (response.ok) {
+                    statusDiv.textContent = 'Event sent successfully! Check the DevTools panel.';
+                    statusDiv.style.color = 'green';
+                } else {
+                    statusDiv.textContent = `Failed to send event: ${response.status} ${response.statusText}`;
+                    statusDiv.style.color = 'red';
+                }
+            } catch (error) {
+                statusDiv.textContent = `Error sending event: ${error.message}`;
+                statusDiv.style.color = 'red';
+            }
+        });
+    </script>
+</body>
+</html>

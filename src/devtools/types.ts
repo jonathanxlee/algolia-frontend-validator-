@@ -47,6 +47,7 @@ export interface TabState {
   startTime?: string
   searches: SearchRequest[]
   events: InsightsRequest[]
+  eventIndex: Map<string, InsightsRequest[]> // ✅ NEW: Add event index for fast lookups
   issues: Issue[]
   expectations: Expectation[]
 }

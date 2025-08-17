@@ -1,16 +1,19 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useAppStore } from '../../store'
 import { DevToolsHeader } from '../components/devtools-header'
 import { Navigation } from '../components/navigation'
-import { LiveTraffic } from './live-traffic'
-import { Correlations, Issues, Expectations, Settings } from './placeholder-views'
+import { Searches } from './searches'
+import { Events } from './events'
+import { Issues, Expectations, Settings } from './placeholder-views'
 import { parseSearchRequest, parseInsightsRequest } from '../utils/request-parsers'
 
 export function DevToolsPanel() {
-  const [activeView, setActiveView] = useState<string>('live-traffic')
+  const [activeView, setActiveView] = useState<string>('searches')
   const [isMonitoring, setIsMonitoring] = useState(false)
   const [contextError, setContextError] = useState<string | null>(null)
-  const [processedRequests] = useState<Set<string>>(new Set())
+  
+  // FIXED: Use useRef instead of useState to persist processedRequests across renders
+  const processedRequests = useRef<Set<string>>(new Set())
 
   const {
     activeTabId,
@@ -51,6 +54,9 @@ export function DevToolsPanel() {
     }, (response) => {
       if (response && response.success) {
         setIsMonitoring(false)
+        // FIXED: Clear processed requests when stopping capture
+        processedRequests.current.clear()
+        console.log('[DEBUG] Capture stopped, processed requests cleared')
       }
     })
   }
@@ -66,17 +72,37 @@ export function DevToolsPanel() {
           const { requestData } = data
           const requestId = data.requestId
           
-          // Check for duplicates
+          // Check for duplicates using the persistent Set
           const duplicateKey = `insights_${requestId}`
-          if (processedRequests.has(duplicateKey)) {
+          if (processedRequests.current.has(duplicateKey)) {
+            console.log('[DEBUG] Duplicate insights request ignored:', requestId)
             return
           }
           
+          // Extract post data properly
+          let postData = '{}'
+          if (requestData.postData) {
+            if (typeof requestData.postData === 'string') {
+              postData = requestData.postData
+            } else if (requestData.postData.text) {
+              postData = requestData.postData.text
+            } else if (requestData.postData.raw) {
+              postData = requestData.postData.raw
+            } else {
+              postData = JSON.stringify(requestData.postData)
+            }
+          }
+          
+          console.log('[DEBUG] Processing insights request with post data:', postData.substring(0, 200))
+          
           // Process insights request
-          const eventData = parseInsightsRequest(requestData.request, requestData.postData || '{}', data.timestamp)
+          const eventData = parseInsightsRequest(requestData.request, postData, data.timestamp)
           if (eventData) {
             addEvent(activeTabId!, eventData)
-            processedRequests.add(duplicateKey)
+            processedRequests.current.add(duplicateKey)
+            console.log('[DEBUG] Insights request processed:', requestId, 'Events:', eventData.events.length)
+          } else {
+            console.log('[DEBUG] Failed to parse insights request:', requestId)
           }
         }
         
@@ -84,9 +110,10 @@ export function DevToolsPanel() {
           const { responseBody, requestData } = data
           const requestId = data.requestId
           
-          // Check for duplicates
+          // Check for duplicates using the persistent Set
           const duplicateKey = `search_${requestId}`
-          if (processedRequests.has(duplicateKey)) {
+          if (processedRequests.current.has(duplicateKey)) {
+            console.log('[DEBUG] Duplicate search request ignored:', requestId)
             return
           }
           
@@ -97,7 +124,8 @@ export function DevToolsPanel() {
           const searchResult = parseSearchRequest(requestData.request, responseBody, appId, data.timestamp)
           if (searchResult) {
             addSearch(activeTabId!, searchResult)
-            processedRequests.add(duplicateKey)
+            processedRequests.current.add(duplicateKey)
+            console.log('[DEBUG] Search request processed:', requestId)
           }
         }
       }
@@ -109,14 +137,14 @@ export function DevToolsPanel() {
     return () => {
       chrome.runtime.onMessage.removeListener(handleBackgroundMessage)
     }
-  }, [activeTabId, addSearch, addEvent, processedRequests])
+  }, [activeTabId, addSearch, addEvent]) // FIXED: Removed processedRequests from dependencies
 
   const renderView = () => {
     switch (activeView) {
-      case 'live-traffic':
-        return <LiveTraffic />
-      case 'correlations':
-        return <Correlations />
+      case 'searches':
+        return <Searches />           // ✅ NEW: Replaces LiveTraffic
+      case 'events':
+        return <Events />             // ✅ NEW: Shows all events
       case 'issues':
         return <Issues />
       case 'expectations':
@@ -124,7 +152,7 @@ export function DevToolsPanel() {
       case 'settings':
         return <Settings />
       default:
-        return <LiveTraffic />
+        return <Searches />
     }
   }
 

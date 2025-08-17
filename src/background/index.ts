@@ -141,6 +141,14 @@ class BackgroundServiceWorker {
           })
         } else if (this.isInsightsRequest(requestData.request.url)) {
           // For insights, send the request data (no response body needed)
+          console.log('[DEBUG] Sending insights request to DevTools:', {
+            url: requestData.request.url,
+            postData: requestData.postData,
+            postDataType: typeof requestData.postData,
+            hasText: !!requestData.postData?.text,
+            hasRaw: !!requestData.postData?.raw
+          })
+          
           this.notifyDevTools('ALGOLIA_INSIGHTS_REQUEST', {
             requestId,
             url: requestData.request.url,

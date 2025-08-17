@@ -28,6 +28,7 @@ export function groupTrafficByQueryId(searches: SearchRequest[], events: Insight
     new Date(b.ts).getTime() - new Date(a.ts).getTime()
   )
   
+  debugger;
   // Process each search
   sortedSearches.forEach((search, searchIndex) => {
     // Check if this search has multiple queries (multi-query request)
@@ -35,21 +36,23 @@ export function groupTrafficByQueryId(searches: SearchRequest[], events: Insight
     
     if (hasMultipleQueries) {
       // Add batch header for multi-query searches
+      const batchId = `batch_${searchIndex}`
       result.push({
         item: { 
-          batchId: `batch_${searchIndex}`, 
+          batchId, 
           count: search.queries.length 
         },
         type: 'batch-header',
         level: 0,
-        batchId: `batch_${searchIndex}`,
+        batchId,
         isLastInGroup: false,
         hasChildren: true
       })
       
-      // Process each query in the search
+      debugger;
+      // Process each query in THIS search (not mixing with other searches)
       search.queries.forEach((query, queryIndex) => {
-        // Find associated events for this query
+        // Find associated events for this specific query
         const associatedEvents = query.queryID ? 
           events.flatMap(event => 
             event.events.filter(eventItem => eventItem.queryID === query.queryID)
@@ -57,12 +60,16 @@ export function groupTrafficByQueryId(searches: SearchRequest[], events: Insight
         
         const hasChildren = associatedEvents.length > 0
         
-        // Add the search query item
+        // Add the search item (representing this specific query)
         result.push({
-          item: search, // Keep the full search request for context
+          item: {
+            ...search,
+            // Override queries to show only this specific query
+            queries: [query]
+          },
           type: 'search',
           level: 1, // Nested under batch header
-          batchId: `batch_${searchIndex}`,
+          batchId,
           isLastInGroup: !hasChildren,
           hasChildren
         })
@@ -80,7 +87,7 @@ export function groupTrafficByQueryId(searches: SearchRequest[], events: Insight
               type: 'event',
               level: 2, // Nested under search within batch
               parentQueryId: query.queryID,
-              batchId: `batch_${searchIndex}`,
+              batchId,
               isLastInGroup: isLastEvent,
               hasChildren: false
             })

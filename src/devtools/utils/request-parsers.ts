@@ -9,6 +9,7 @@ import {
   parseRequestParams,
   isMultiRequestFormat,
   extractUserToken,
+  extractQueryUserToken,
   extractClickAnalytics,
   extractIndices,
   extractIndicesFromUrl,
@@ -75,7 +76,7 @@ function parseSingleSearchRequest(
   const clickAnalytics = extractClickAnalytics(parsedParams)
   // For single requests, extract indices from URL since they're not in the request body
   const indices = extractIndicesFromUrl(request.url)
-  const queryId = extractQueryId(responseBody)
+  const queryId = responseBody ? extractQueryId(responseBody) : undefined
 
   console.log('[DEBUG] Single search request parsed:', {
     userToken,
@@ -88,7 +89,7 @@ function parseSingleSearchRequest(
   const searchQuery: SearchQuery = {
     id: generateRequestId('query'),
     index: indices[0] || 'unknown',
-    params: JSON.stringify(parsedParams),
+    params: requestBody, // Use original request body to preserve malformed JSON
     queryID: queryId,
     userToken,
     clickAnalytics
@@ -155,7 +156,7 @@ function parseMultiSearchRequest(
       // Extract data for this individual request
       const indices = req.indexName ? [req.indexName] : []
       const clickAnalytics = req.params ? req.params.includes('clickAnalytics=true') : false
-      const userToken = extractUserToken(request, { requests: [req] })
+      const userToken = extractQueryUserToken(req, extractUserToken(request, parsedParams))
       const queryId = result.queryID || result.queryId
       
       console.log(`[DEBUG] Multi-search request ${index} parsed:`, {
@@ -258,12 +259,12 @@ export function parseInsightsRequest(
       } else if (event.eventName) {
         const name = event.eventName.toLowerCase()
         if (name.includes('click')) eventType = 'click'
-        else if (name.includes('conversion') || name.includes('purchase') || name.includes('addtocart')) eventType = 'conversion'
+        else if (name.includes('conversion') || name.includes('purchase') || name.includes('addtocart') || name.includes('add to cart')) eventType = 'conversion'
         else if (name.includes('view')) eventType = 'view'
       }
       
       // Extract data
-      const userToken = extractUserToken(request, parsedParams) || event.userToken
+      const userToken = event.userToken || extractUserToken(request, parsedParams)
       const objectIDs = event.objectIDs || []
       if (event.objectID) objectIDs.push(event.objectID)
       

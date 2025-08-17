@@ -43,6 +43,12 @@ export function parseRequestParams(body: string, contentType?: string): any {
       if (requestsParam) {
         return JSON.parse(requestsParam)
       }
+      // For single requests, return the parsed URL params
+      const params: Record<string, string> = {}
+      urlParams.forEach((value, key) => {
+        params[key] = value
+      })
+      return params
     } catch {
       // Final attempt: parse body as JSON despite content-type
       try {
@@ -67,6 +73,7 @@ export function isMultiRequestFormat(parsedParams: any): boolean {
 
 /**
  * Extract user token from request headers or params
+ * Now supports per-query userToken extraction for multi-request scenarios
  */
 export function extractUserToken(request: any, parsedParams: any): string | undefined {
   // Check headers first
@@ -76,18 +83,54 @@ export function extractUserToken(request: any, parsedParams: any): string | unde
     if (headerToken) return headerToken
   }
   
-  // Check params string for userToken
+  // For multi-request format, extract from individual requests
   if (parsedParams.requests && Array.isArray(parsedParams.requests)) {
-    const firstRequest = parsedParams.requests[0]
-    if (firstRequest.params) {
-      const userTokenMatch = firstRequest.params.match(/userToken=([^&]+)/)
-      if (userTokenMatch) {
-        return decodeURIComponent(userTokenMatch[1])
-      }
+    // This function is called for the overall request, so we return the header token
+    // Individual query userTokens are extracted separately in parseMultiSearchRequest
+    return undefined
+  }
+  
+  // For single requests, check params string for userToken
+  if (parsedParams.params) {
+    const userTokenMatch = parsedParams.params.match(/userToken=([^&]+)/)
+    if (userTokenMatch) {
+      return decodeURIComponent(userTokenMatch[1])
     }
   }
   
+  // Check if userToken is a direct property (for both JSON and URL-encoded requests)
+  if (parsedParams.userToken !== undefined) {
+    return parsedParams.userToken
+  }
+  
   return undefined
+}
+
+/**
+ * Extract user token for a specific query in a multi-request
+ * Priority: query userToken > header userToken > undefined
+ */
+export function extractQueryUserToken(
+  queryData: any, 
+  headerUserToken?: string
+): string | undefined {
+  // First check if this specific query has a userToken
+  if (queryData.userToken !== undefined) {
+    return queryData.userToken
+  }
+  
+  // Check if userToken is in the params string
+  if (queryData.params) {
+    const userTokenMatch = queryData.params.match(/userToken=([^&]*)/)
+    if (userTokenMatch) {
+      const value = userTokenMatch[1]
+      // Preserve empty strings, only treat missing parameter as undefined
+      return value === '' ? '' : decodeURIComponent(value)
+    }
+  }
+  
+  // Fallback to header userToken
+  return headerUserToken
 }
 
 /**
@@ -149,6 +192,10 @@ export function extractIndicesFromUrl(url: string): string[] {
  * Extract query ID from response body
  */
 export function extractQueryId(responseBody: string): string | undefined {
+  if (!responseBody || responseBody.trim() === '') {
+    return undefined
+  }
+  
   try {
     const responseData = JSON.parse(responseBody)
     return responseData.queryID || responseData.queryId

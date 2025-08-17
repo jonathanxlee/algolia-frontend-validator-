@@ -1,0 +1,94 @@
+{
+  "sessionId": "sess_12345",
+  "siteId": "fashionnova.com",
+  "pageUrl": "https://www.fashionnova.com/search?q=jeans",
+  "timeRange": [
+    "2025-08-17T17:00:00Z",
+    "2025-08-17T17:05:00Z"
+  ],
+  "contractVersion": "1.0.0",
+  "networkRequests": [
+    {
+      "ts": "2025-08-17T17:00:05Z",
+      "type": "search_request",
+      "url": "https://my-app-id-dsn.algolia.net/1/indexes/*/queries",
+      "method": "POST",
+      "appId": "MYALGOLIAAPP",
+      "requestHeaders": {
+        "content-type": "application/json",
+        "x-algolia-api-key": "xxxx-redacted",
+        "x-algolia-application-id": "MYALGOLIAAPP"
+      },
+      "requestBody": "{\"requests\":[{\"indexName\":\"products\",\"params\":\"query=jeans&clickAnalytics=true&hitsPerPage=20\"},{\"indexName\":\"categories\",\"params\":\"query=jeans\"}]}",
+      "responseStatus": 200,
+      "responseHeaders": {
+        "content-type": "application/json"
+      },
+      "responseBody": "{\"results\":[{\"hits\":[...]},{\"hits\":[...]}]}",
+      "queries": [
+        {
+          "id": "req1:0",
+          "subId": 0,
+          "index": "products",
+          "params": "query=jeans&clickAnalytics=true&hitsPerPage=20",
+          "paramsParsed": {
+            "query": "jeans",
+            "clickAnalytics": true,
+            "hitsPerPage": 20
+          },
+          "queryID": "abcdef12345",
+          "userToken": "user_001",
+          "clickAnalytics": true
+        },
+        {
+          "id": "req1:1",
+          "subId": 1,
+          "index": "categories",
+          "params": "query=jeans",
+          "paramsParsed": {
+            "query": "jeans"
+          }
+        }
+      ]
+    },
+    {
+      "ts": "2025-08-17T17:01:10Z",
+      "type": "insights_request",
+      "url": "https://insights.algolia.io/1/events",
+      "method": "POST",
+      "appId": "MYALGOLIAAPP",
+      "requestHeaders": {
+        "content-type": "application/json"
+      },
+      "requestBody": "{\"events\":[{\"eventType\":\"click\",\"eventName\":\"Product Clicked\",\"index\":\"products\",\"objectIDs\":[\"123\"],\"positions\":[1],\"queryID\":\"abcdef12345\",\"userToken\":\"user_001\"},{\"eventType\":\"conversion\",\"eventName\":\"Added to Cart\",\"index\":\"products\",\"objectIDs\":[\"123\"],\"queryID\":\"abcdef12345\",\"userToken\":\"user_001\"}]}",
+      "responseStatus": 200,
+      "responseHeaders": {
+        "content-type": "application/json"
+      },
+      "responseBody": "{\"status\":\"ok\"}",
+      "events": [
+        {
+          "id": "evt1",
+          "eventTs": "2025-08-17T17:01:10Z",
+          "eventType": "click",
+          "eventName": "Product Clicked",
+          "index": "products",
+          "objectIDs": ["123"],
+          "positions": [1],
+          "queryID": "abcdef12345",
+          "userToken": "user_001"
+        },
+        {
+          "id": "evt2",
+          "eventTs": "2025-08-17T17:01:15Z",
+          "eventType": "conversion",
+          "eventName": "Added to Cart",
+          "index": "products",
+          "objectIDs": ["123"],
+          "queryID": "abcdef12345",
+          "userToken": "user_001"
+        }
+      ]
+    }
+  ]
+}

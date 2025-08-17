@@ -9,6 +9,7 @@ import type {
   Issue, 
   Expectation 
 } from '../devtools/types'
+import { createEventIndex } from '../devtools/utils/traffic-helpers'
 
 const DEFAULT_CONFIG: SessionConfig = {
   searchHosts: [
@@ -47,6 +48,9 @@ interface AppActions {
   // Data clearing
   clearTabData: (tabId: number) => void
   clearAllData: () => void
+  
+  // ✅ NEW: Add action to rebuild index when events change
+  rebuildEventIndex: (tabId: number) => void
 }
 
 export const useAppStore = create<AppState & AppActions>()(
@@ -73,6 +77,7 @@ export const useAppStore = create<AppState & AppActions>()(
                 isCapturing: false,
                 searches: [],
                 events: [],
+                eventIndex: new Map(), // ✅ NEW: Initialize empty event index
                 issues: [],
                 expectations: []
               }
@@ -166,12 +171,17 @@ export const useAppStore = create<AppState & AppActions>()(
             return
           }
           
+          const newEvents = [...tab.events, event]
+          // ✅ NEW: Rebuild event index when events change
+          const newEventIndex = createEventIndex(newEvents)
+          
           set({
             tabs: {
               ...tabs,
               [tabId]: {
                 ...tab,
-                events: [...tab.events, event]
+                events: newEvents,
+                eventIndex: newEventIndex
               }
             }
           })
@@ -246,6 +256,7 @@ export const useAppStore = create<AppState & AppActions>()(
                 ...tab,
                 searches: [],
                 events: [],
+                eventIndex: new Map(), // ✅ NEW: Reset event index
                 issues: [],
                 expectations: []
               }
@@ -259,6 +270,24 @@ export const useAppStore = create<AppState & AppActions>()(
           tabs: {},
           activeTabId: undefined
         })
+      },
+
+      // ✅ NEW: Action to rebuild event index
+      rebuildEventIndex: (tabId: number) => {
+        const { tabs } = get()
+        const tab = tabs[tabId]
+        if (tab) {
+          const newEventIndex = createEventIndex(tab.events)
+          set({
+            tabs: {
+              ...tabs,
+              [tabId]: {
+                ...tab,
+                eventIndex: newEventIndex
+              }
+            }
+          })
+        }
       }
     }),
     {

@@ -333,7 +333,153 @@ describe('groupTrafficByQueryId', () => {
     expect(result[2].level).toBe(1)
 
     expect(result[3].type).toBe('search')
-    expect((result[3].item as SearchRequest).queries[1].id).toBe('query2') // Second query
+    expect((result[3].item as SearchRequest).queries[0].id).toBe('query2') // Second query
     expect(result[3].level).toBe(1)
+  })
+
+  it('should NOT mix queries from different search requests in the same batch', () => {
+    // This test demonstrates the bug that was happening:
+    // Multiple search requests with different query counts should NOT mix together
+    const searches: SearchRequest[] = [
+      {
+        type: 'search_request',
+        ts: "2024-01-01T10:00:00Z",
+        url: "https://example.com/search1",
+        method: "POST",
+        appId: "test",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        queries: [
+          {
+            id: "query1",
+            subId: 0,
+            index: "products",
+            params: "query=shoes"
+          },
+          {
+            id: "query2",
+            subId: 1,
+            index: "products",
+            params: "query=hats"
+          }
+        ]
+      },
+      {
+        type: 'search_request',
+        ts: "2024-01-01T10:01:00Z",
+        url: "https://example.com/search2",
+        method: "POST",
+        appId: "test",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        queries: [
+          {
+            id: "query3",
+            subId: 0,
+            index: "products",
+            params: "query=jackets"
+          },
+          {
+            id: "query4",
+            subId: 1,
+            index: "products",
+            params: "query=pants"
+          }
+        ]
+      },
+      {
+        type: 'search_request',
+        ts: "2024-01-01T10:02:00Z",
+        url: "https://example.com/search3",
+        method: "POST",
+        appId: "test",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        queries: [{
+          id: "query5",
+          index: "products",
+          params: "query=shirts"
+        }]
+      }
+    ]
+
+    const events: InsightsRequest[] = []
+
+    const result = groupTrafficByQueryId(searches, events)
+
+    // Expected structure (after sorting by timestamp, newest first):
+    // 1. Single search (query5) - newest, no batch
+    // 2. Batch header for search2 (2 queries) - batch_1
+    // 3. Search2 query1 (query3)
+    // 4. Search2 query2 (query4)
+    // 5. Batch header for search1 (2 queries) - batch_2
+    // 6. Search1 query1 (query1)
+    // 7. Search1 query2 (query2)
+
+    expect(result).toHaveLength(7)
+
+    // Check single search comes first (newest timestamp)
+    expect(result[0].type).toBe('search')
+    expect((result[0].item as SearchRequest).queries[0].id).toBe('query5')
+    expect(result[0].level).toBe(0)
+    expect(result[0].batchId).toBeNull()
+
+    // Check first batch header (search2)
+    expect(result[1].type).toBe('batch-header')
+    expect((result[1].item as { count: number }).count).toBe(2)
+    expect(result[1].level).toBe(0)
+    expect(result[1].batchId).toBe('batch_1') // search2 is at index 1 after sorting
+
+    // Check first batch queries (search2)
+    expect(result[2].type).toBe('search')
+    expect((result[2].item as SearchRequest).queries[0].id).toBe('query3')
+    expect(result[2].level).toBe(1)
+    expect(result[2].batchId).toBe('batch_1')
+
+    expect(result[3].type).toBe('search')
+    expect((result[3].item as SearchRequest).queries[0].id).toBe('query4')
+    expect(result[3].level).toBe(1)
+    expect(result[3].batchId).toBe('batch_1')
+
+    // Check second batch header (search1)
+    expect(result[4].type).toBe('batch-header')
+    expect((result[4].item as { count: number }).count).toBe(2)
+    expect(result[4].level).toBe(0)
+    expect(result[4].batchId).toBe('batch_2') // search1 is at index 2 after sorting
+
+    // Check second batch queries (search1)
+    expect(result[5].type).toBe('search')
+    expect((result[5].item as SearchRequest).queries[0].id).toBe('query1')
+    expect(result[5].level).toBe(1)
+    expect(result[5].batchId).toBe('batch_2')
+
+    expect(result[6].type).toBe('search')
+    expect((result[6].item as SearchRequest).queries[0].id).toBe('query2')
+    expect(result[6].level).toBe(1)
+    expect(result[6].batchId).toBe('batch_2')
+
+    // CRITICAL: Ensure queries from different searches are NOT mixed
+    // All queries in batch_1 should be from search2
+    const batch1Items = result.filter(item => item.batchId === 'batch_1')
+    const batch1QueryIds = batch1Items
+      .filter(item => item.type === 'search')
+      .map(item => (item.item as SearchRequest).queries[0].id)
+    expect(batch1QueryIds).toEqual(['query3', 'query4']) // Only search2 queries
+
+    // All queries in batch_2 should be from search1
+    const batch2Items = result.filter(item => item.batchId === 'batch_2')
+    const batch2QueryIds = batch2Items
+      .filter(item => item.type === 'search')
+      .map(item => (item.item as SearchRequest).queries[0].id)
+    expect(batch2QueryIds).toEqual(['query1', 'query2']) // Only search1 queries
   })
 })
