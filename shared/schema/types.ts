@@ -12,7 +12,7 @@ export interface Session {
   export type NetworkRequest = SearchRequest | InsightsRequest;
   
   // Common wire-level fields for any captured HTTP request
-  interface BaseRequest {
+  export interface BaseRequest {
     ts: string; // ISO datetime when the HTTP request was observed
     type: "search_request" | "insights_request";
     url: string;

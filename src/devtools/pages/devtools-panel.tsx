@@ -96,13 +96,7 @@ export function DevToolsPanel() {
           // Process search request
           const searchResult = parseSearchRequest(requestData.request, responseBody, appId, data.timestamp)
           if (searchResult) {
-            if (Array.isArray(searchResult)) {
-              searchResult.forEach((searchData) => {
-                addSearch(activeTabId!, searchData)
-              })
-            } else {
-              addSearch(activeTabId!, searchResult)
-            }
+            addSearch(activeTabId!, searchResult)
             processedRequests.add(duplicateKey)
           }
         }

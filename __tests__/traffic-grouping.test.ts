@@ -1,57 +1,147 @@
 /**
  * Tests for traffic grouping utilities
+ * Updated to work with new nested schema structure
  */
 
 import { groupTrafficByQueryId } from '../src/devtools/utils/traffic-grouping'
+import type { SearchRequest, InsightsRequest } from '../src/devtools/types'
 
 describe('groupTrafficByQueryId', () => {
   it('should group traffic with searches newest first and events nested underneath', () => {
-    // Test data matching the user's requirements
-    const searches = [
+    // Test data matching the new nested schema structure
+    const searches: SearchRequest[] = [
       {
-        id: "search1",
-        time: "2024-01-01T10:00:00Z",  // OLDEST
-        queryId: "query123",
-        batchId: "batch1"
+        type: 'search_request',
+        ts: "2024-01-01T10:00:00Z",  // OLDEST
+        url: "https://example.com/search1",
+        method: "POST",
+        appId: "test",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        queries: [{
+          id: "query1",
+          index: "products",
+          params: "query=shoes",
+          queryID: "query123"
+        }]
       },
       {
-        id: "search2", 
-        time: "2024-01-01T10:05:00Z",  // NEWER
-        queryId: "query456",
-        batchId: "batch2"
+        type: 'search_request',
+        ts: "2024-01-01T10:05:00Z",  // NEWER
+        url: "https://example.com/search2",
+        method: "POST",
+        appId: "test",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        queries: [{
+          id: "query2",
+          index: "products",
+          params: "query=hats",
+          queryID: "query456"
+        }]
       },
       {
-        id: "search3",
-        time: "2024-01-01T10:10:00Z",  // NEWEST
-        queryId: "query789",
-        batchId: "batch3"
+        type: 'search_request',
+        ts: "2024-01-01T10:10:00Z",  // NEWEST
+        url: "https://example.com/search3",
+        method: "POST",
+        appId: "test",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        queries: [{
+          id: "query3",
+          index: "products",
+          params: "query=shirts",
+          queryID: "query789"
+        }]
       }
     ]
 
-    const events = [
+    const events: InsightsRequest[] = [
       {
-        id: "event1",
-        time: "2024-01-01T10:01:00Z",  // After search1
-        queryId: "query123",            // Links to search1
-        type: "click"
+        type: 'insights_request',
+        ts: "2024-01-01T10:01:00Z",  // After search1
+        url: "https://example.com/insights1",
+        method: "POST",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        events: [{
+          id: "event1",
+          eventType: "click",
+          eventName: "click",
+          index: "products",
+          objectIDs: ["123"],
+          queryID: "query123"  // Links to search1
+        }]
       },
       {
-        id: "event2", 
-        time: "2024-01-01T10:06:00Z",  // After search2
-        queryId: "query456",            // Links to search2
-        type: "click"
+        type: 'insights_request',
+        ts: "2024-01-01T10:06:00Z",  // After search2
+        url: "https://example.com/insights2",
+        method: "POST",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        events: [{
+          id: "event2",
+          eventType: "click",
+          eventName: "click",
+          index: "products",
+          objectIDs: ["456"],
+          queryID: "query456"  // Links to search2
+        }]
       },
       {
-        id: "event3",
-        time: "2024-01-01T10:07:00Z",  // After search2 (2nd event for same search)
-        queryId: "query456",            // Links to search2
-        type: "conversion"
+        type: 'insights_request',
+        ts: "2024-01-01T10:07:00Z",  // After search2 (2nd event for same search)
+        url: "https://example.com/insights3",
+        method: "POST",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        events: [{
+          id: "event3",
+          eventType: "conversion",
+          eventName: "conversion",
+          index: "products",
+          objectIDs: ["456"],
+          queryID: "query456"  // Links to search2
+        }]
       },
       {
-        id: "event4",
-        time: "2024-01-01T10:11:00Z",  // After search3
-        queryId: "query789",            // Links to search3
-        type: "click"
+        type: 'insights_request',
+        ts: "2024-01-01T10:11:00Z",  // After search3
+        url: "https://example.com/insights4",
+        method: "POST",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        events: [{
+          id: "event4",
+          eventType: "click",
+          eventName: "click",
+          index: "products",
+          objectIDs: ["789"],
+          queryID: "query789"  // Links to search3
+        }]
       }
     ]
 
@@ -70,72 +160,98 @@ describe('groupTrafficByQueryId', () => {
 
     // Check Search 3 (newest) comes first
     expect(result[0].type).toBe('search')
-    expect(result[0].item.id).toBe('search3')
+    expect((result[0].item as SearchRequest).queries[0].queryID).toBe('query789')
     expect(result[0].level).toBe(0)
 
     // Check Event 4 is nested under Search 3
     expect(result[1].type).toBe('event')
-    expect(result[1].item.id).toBe('event4')
+    expect((result[1].item as any).queryID).toBe('query789')
     expect(result[1].level).toBe(1)
     expect(result[1].parentQueryId).toBe('query789')
 
     // Check Search 2 comes second
     expect(result[2].type).toBe('search')
-    expect(result[2].item.id).toBe('search2')
+    expect((result[2].item as SearchRequest).queries[0].queryID).toBe('query456')
     expect(result[2].level).toBe(0)
 
     // Check Event 3 is nested under Search 2 (newer event first)
     expect(result[3].type).toBe('event')
-    expect(result[3].item.id).toBe('event3')
+    expect((result[3].item as any).queryID).toBe('query456')
     expect(result[3].level).toBe(1)
     expect(result[3].parentQueryId).toBe('query456')
 
     // Check Event 2 is nested under Search 2 (older event second)
     expect(result[4].type).toBe('event')
-    expect(result[4].item.id).toBe('event2')
+    expect((result[4].item as any).queryID).toBe('query456')
     expect(result[4].level).toBe(1)
     expect(result[4].parentQueryId).toBe('query456')
 
     // Check Search 1 (oldest) comes last
     expect(result[5].type).toBe('search')
-    expect(result[5].item.id).toBe('search1')
+    expect((result[5].item as SearchRequest).queries[0].queryID).toBe('query123')
     expect(result[5].level).toBe(0)
 
     // Check Event 1 is nested under Search 1
     expect(result[6].type).toBe('event')
-    expect(result[6].item.id).toBe('event1')
+    expect((result[6].item as any).queryID).toBe('query123')
     expect(result[6].level).toBe(1)
     expect(result[6].parentQueryId).toBe('query123')
   })
 
   it('should handle searches without events', () => {
-    const searches = [
+    const searches: SearchRequest[] = [
       {
-        id: "search1",
-        time: "2024-01-01T10:00:00Z",
-        queryId: "query123"
+        type: 'search_request',
+        ts: "2024-01-01T10:00:00Z",
+        url: "https://example.com/search1",
+        method: "POST",
+        appId: "test",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        queries: [{
+          id: "query1",
+          index: "products",
+          params: "query=shoes",
+          queryID: "query123"
+        }]
       }
     ]
 
-    const events: any[] = []
+    const events: InsightsRequest[] = []
 
     const result = groupTrafficByQueryId(searches, events)
 
     expect(result).toHaveLength(1)
     expect(result[0].type).toBe('search')
-    expect(result[0].item.id).toBe('search1')
+    expect((result[0].item as SearchRequest).queries[0].queryID).toBe('query123')
     expect(result[0].hasChildren).toBe(false)
   })
 
   it('should handle events without QueryID', () => {
-    const searches: any[] = []
+    const searches: SearchRequest[] = []
 
-    const events = [
+    const events: InsightsRequest[] = [
       {
-        id: "event1",
-        time: "2024-01-01T10:00:00Z",
-        type: "click"
-        // No queryId
+        type: 'insights_request',
+        ts: "2024-01-01T10:00:00Z",
+        url: "https://example.com/insights1",
+        method: "POST",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        events: [{
+          id: "event1",
+          eventType: "click",
+          eventName: "click",
+          index: "products",
+          objectIDs: ["123"]
+          // No queryID
+        }]
       }
     ]
 
@@ -143,59 +259,81 @@ describe('groupTrafficByQueryId', () => {
 
     expect(result).toHaveLength(1)
     expect(result[0].type).toBe('event')
-    expect(result[0].item.id).toBe('event1')
+    expect((result[0].item as any).id).toBe('event1')
     expect(result[0].level).toBe(0)
     expect(result[0].parentQueryId).toBeNull()
   })
 
   it('should group multi-query batches with headers', () => {
-    const searches = [
+    const searches: SearchRequest[] = [
       {
-        id: "search1",
-        time: "2024-01-01T10:00:00Z",
-        queryId: "query123",
-        batchId: "batch1",
-        isMultiRequest: true
+        type: 'search_request',
+        ts: "2024-01-01T10:00:00Z",
+        url: "https://example.com/search1",
+        method: "POST",
+        appId: "test",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        queries: [
+          {
+            id: "query1",
+            subId: 0,
+            index: "products",
+            params: "query=shoes"
+          },
+          {
+            id: "query2",
+            subId: 1,
+            index: "products",
+            params: "query=hats"
+          }
+        ]
       },
       {
-        id: "search2",
-        time: "2024-01-01T10:01:00Z",
-        queryId: "query456",
-        batchId: "batch1",
-        isMultiRequest: true
-      },
-      {
-        id: "search3",
-        time: "2024-01-01T10:02:00Z",
-        queryId: "query789"
-        // No batchId, single search
+        type: 'search_request',
+        ts: "2024-01-01T10:02:00Z",
+        url: "https://example.com/search3",
+        method: "POST",
+        appId: "test",
+        requestHeaders: {},
+        requestBody: "",
+        responseStatus: 200,
+        responseHeaders: {},
+        responseBody: "",
+        queries: [{
+          id: "query3",
+          index: "products",
+          params: "query=shirts"
+        }]
       }
     ]
 
-    const events: any[] = []
+    const events: InsightsRequest[] = []
 
     const result = groupTrafficByQueryId(searches, events)
 
-    expect(result).toHaveLength(4) // 1 batch header + 2 batch searches + 1 single search
+    expect(result).toHaveLength(4) // 1 single search + 1 batch header + 2 batch queries
 
-    // Check batch header comes first
-    expect(result[0].type).toBe('batch-header')
-    expect(result[0].item.batchId).toBe('batch1')
-    expect(result[0].item.count).toBe(2)
+    // Check single search comes first (newest timestamp)
+    expect(result[0].type).toBe('search')
+    expect((result[0].item as SearchRequest).queries[0].id).toBe('query3')
     expect(result[0].level).toBe(0)
 
-    // Check batch searches are nested under header
-    expect(result[1].type).toBe('search')
-    expect(result[1].item.id).toBe('search2') // Newer first
-    expect(result[1].level).toBe(1)
+    // Check batch header comes second
+    expect(result[1].type).toBe('batch-header')
+    expect((result[1].item as { count: number }).count).toBe(2)
+    expect(result[1].level).toBe(0)
 
+    // Check batch queries are nested under header
     expect(result[2].type).toBe('search')
-    expect(result[2].item.id).toBe('search1') // Older second
+    expect((result[2].item as SearchRequest).queries[0].id).toBe('query1') // First query
     expect(result[2].level).toBe(1)
 
-    // Check single search comes after batch
     expect(result[3].type).toBe('search')
-    expect(result[3].item.id).toBe('search3')
-    expect(result[3].level).toBe(0)
+    expect((result[3].item as SearchRequest).queries[1].id).toBe('query2') // Second query
+    expect(result[3].level).toBe(1)
   })
 })

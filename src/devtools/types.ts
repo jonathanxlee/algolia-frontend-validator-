@@ -1,47 +1,19 @@
 /**
  * Shared types for the Algolia Front End Validator extension
- * Used by both popup and DevTools components
+ * Now using the shared schema types for consistency
  */
 
-export interface SearchRequest {
-  id: string
-  time: string
-  requestId: string
-  url: string
-  method: 'POST' | 'GET'
-  headers: Record<string, string>
-  appId: string
-  indices: string[]
-  clickAnalytics: boolean
-  userToken?: string
-  queryId?: string
-  params: string
-  hitsSample: string[]
-  responseSnippet: string
-  rawRequestBody?: string
-  isMultiRequest?: boolean
-  requestIndex?: number
-  totalRequests?: number
-  batchId?: string
-}
+// Re-export shared schema types
+export type {
+  Session,
+  NetworkRequest,
+  SearchRequest,
+  SearchQuery,
+  InsightsRequest,
+  InsightsEvent
+} from '../../shared/schema/types'
 
-export interface EventRequest {
-  id: string
-  time: string
-  requestId: string
-  url: string
-  type: 'click' | 'conversion' | 'view' | 'purchase'
-  eventName: string
-  index: string
-  userToken?: string
-  queryId?: string
-  objectIDs?: string[]
-  products?: any[]
-  payloadSnippet: string
-}
-
-export type TrafficItem = SearchRequest | EventRequest
-
+// Keep UI-specific types that aren't in the schema
 export interface Issue {
   id: string
   severity: 'error' | 'warning' | 'info'
@@ -68,12 +40,13 @@ export interface SessionConfig {
   expectationTimeoutSec: number
 }
 
+// Update TabState to use new schema types
 export interface TabState {
   tabId: number
   isCapturing: boolean
   startTime?: string
   searches: SearchRequest[]
-  events: EventRequest[]
+  events: InsightsRequest[]
   issues: Issue[]
   expectations: Expectation[]
 }
@@ -83,3 +56,6 @@ export interface AppState {
   config: SessionConfig
   activeTabId?: number
 }
+
+// Legacy type for backward compatibility during transition
+export type TrafficItem = NetworkRequest

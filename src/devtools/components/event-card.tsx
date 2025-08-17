@@ -1,10 +1,10 @@
 import React from 'react'
 import { ChevronDown, ChevronRight, Activity } from 'lucide-react'
-import type { EventRequest } from '../types'
+import type { InsightsEvent } from '../types'
 import { DetailPanel } from '../pages/detail-panel'
 
 interface EventCardProps {
-  event: EventRequest
+  event: InsightsEvent
   isExpanded: boolean
   onToggle: () => void
   level: number
@@ -22,7 +22,7 @@ export function EventCard({
   batchId, 
   isLastInGroup 
 }: EventCardProps) {
-  const hasQueryId = !!event.queryId
+  const hasQueryId = !!event.queryID
   const hasUserToken = !!event.userToken
   
   return (
@@ -38,7 +38,7 @@ export function EventCard({
         <div className="card-content">
           <div className="card-title">
             <span className="event-type">
-              {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+              {event.eventType.charAt(0).toUpperCase() + event.eventType.slice(1)}
             </span>
             <span className="event-name">
               {event.eventName}
@@ -50,7 +50,7 @@ export function EventCard({
           
           <div className="card-details">
             <div className="event-details">
-              <strong>{event.type.charAt(0).toUpperCase() + event.type.slice(1)}</strong> "{event.eventName}"
+              <strong>{event.eventType.charAt(0).toUpperCase() + event.eventType.slice(1)}</strong> "{event.eventName}"
             </div>
             {event.objectIDs && event.objectIDs.length > 0 && (
               <div className="event-objects">
@@ -59,13 +59,13 @@ export function EventCard({
               </div>
             )}
             <span className="query-id">
-              Query ID: {hasQueryId ? event.queryId : 'missing'}
+              Query ID: {hasQueryId ? event.queryID : 'missing'}
             </span>
             <span className="user-token">
               User Token: {hasUserToken ? event.userToken : 'missing'}
             </span>
             <span className="time">
-              {new Date(event.time).toLocaleTimeString()}
+              {new Date(event.eventTs || Date.now()).toLocaleTimeString()}
             </span>
           </div>
         </div>

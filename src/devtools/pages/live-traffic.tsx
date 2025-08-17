@@ -21,8 +21,8 @@ export function LiveTraffic() {
     let traffic = groupedTraffic
     
     // Filter out 'view' events by default
-    traffic = traffic.filter(({ item }) => {
-      if ('type' in item && item.type === 'view') {
+    traffic = traffic.filter(({ item, type }) => {
+      if (type === 'event' && 'eventType' in item && item.eventType === 'view') {
         return false
       }
       return true
@@ -58,34 +58,46 @@ export function LiveTraffic() {
         const batchItems: GroupedTrafficItem[] = []
         let j = i + 1
         
-        while (j < filteredTraffic.length && 
-               filteredTraffic[j].type !== 'batch-header' && 
-               filteredTraffic[j].batchId === item.item.batchId) {
-          batchItems.push(filteredTraffic[j])
-          j++
+        // Type guard for batch header
+        if (item.type === 'batch-header' && 'batchId' in item.item && 'count' in item.item) {
+          const batchHeader = item.item as { batchId: string; count: number }
+          
+          while (j < filteredTraffic.length && 
+                 filteredTraffic[j].type !== 'batch-header' && 
+                 filteredTraffic[j].batchId === batchHeader.batchId) {
+            batchItems.push(filteredTraffic[j])
+            j++
+          }
+          
+          // Render batch group
+          items.push(
+            <BatchGroup
+              key={`batch-${batchHeader.batchId}`}
+              batchId={batchHeader.batchId}
+              count={batchHeader.count}
+              items={batchItems}
+              expandedRows={expandedRows}
+              onToggle={toggleRow}
+            />
+          )
         }
-        
-        // Render batch group
-        items.push(
-          <BatchGroup
-            key={`batch-${item.item.batchId}`}
-            batchId={item.item.batchId}
-            count={item.item.count}
-            items={batchItems}
-            expandedRows={expandedRows}
-            onToggle={toggleRow}
-          />
-        )
         
         i = j // Skip to after the batch
       } else {
         // Render individual item
+        // Create a unique key for each item
+        const itemKey = item.type === 'search' 
+          ? `search-${(item.item as any).ts}-${(item.item as any).url}`
+          : item.type === 'event'
+          ? `event-${(item.item as any).id}`
+          : `item-${i}`
+        
         items.push(
           <TrafficCard
-            key={item.item.id}
+            key={itemKey}
             item={item}
-            isExpanded={expandedRows.has(item.item.id)}
-            onToggle={() => toggleRow(item.item.id)}
+            isExpanded={expandedRows.has(itemKey)}
+            onToggle={() => toggleRow(itemKey)}
           />
         )
         i++

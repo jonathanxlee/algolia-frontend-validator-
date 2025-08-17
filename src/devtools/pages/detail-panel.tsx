@@ -1,99 +1,159 @@
 import React, { useState } from 'react'
-import type { TrafficItem } from '../../shared/types'
+import type { NetworkRequest, SearchRequest, InsightsRequest, InsightsEvent } from '../types'
 import { ChevronRight, AlertTriangle } from 'lucide-react'
 
 interface DetailPanelProps {
-  item: TrafficItem
+  item: NetworkRequest | InsightsEvent
 }
 
 export function DetailPanel({ item }: DetailPanelProps) {
   const [activeTab, setActiveTab] = useState<'fields' | 'snippets'>('fields')
 
   const renderExtractedFields = () => {
-    if ('appId' in item) {
+    if ('queries' in item) {
       // Search request
+      const search = item as SearchRequest
+      const primaryQuery = search.queries[0]
+      
       return (
         <div className="extracted-fields">
           <div className="field-label">queryID:</div>
           <div className="field-value">
-            {item.queryId || 'missing'}
+            {primaryQuery.queryID || 'missing'}
           </div>
           
           <div className="field-label">userToken:</div>
-          <div className={`field-value ${!item.userToken ? 'warning' : ''}`}>
+          <div className={`field-value ${!primaryQuery.userToken ? 'warning' : ''}`}>
             <div className="field-warning">
-              {item.userToken || 'missing'}
-              {!item.userToken && <AlertTriangle className="warning-icon" />}
+              {primaryQuery.userToken || 'missing'}
+              {!primaryQuery.userToken && <AlertTriangle className="warning-icon" />}
             </div>
           </div>
           
           <div className="field-label">index:</div>
           <div className="field-value">
-            {Array.isArray(item.indices) ? item.indices.join(', ') : String(item.indices || 'unknown')}
+            {primaryQuery.index}
           </div>
           
           <div className="field-label">timestamp:</div>
           <div className="field-value">
-            {new Date(item.time).toLocaleTimeString()}
+            {new Date(search.ts).toLocaleTimeString()}
           </div>
           
-          <div className="field-label">requestID:</div>
+          <div className="field-label">queries count:</div>
           <div className="field-value">
-            {item.requestId}
+            {search.queries.length}
           </div>
           
-          {item.isMultiRequest && item.totalRequests && item.requestIndex !== undefined && (
+          {search.queries.length > 1 && (
             <>
-              <div className="field-label">queryIndex:</div>
+              <div className="field-label">multi-query:</div>
               <div className="field-value">
-                {item.requestIndex + 1} of {item.totalRequests}
+                Yes ({search.queries.length} queries)
               </div>
             </>
           )}
         </div>
       )
-    } else {
-      // Event request
+    } else if ('events' in item) {
+      // Insights request - show first event details
+      const insights = item as InsightsRequest
+      const primaryEvent = insights.events[0]
+      
       return (
         <div className="extracted-fields">
           <div className="field-label">eventType:</div>
           <div className="field-value">
-            {item.type}
+            {primaryEvent.eventType}
           </div>
           
           <div className="field-label">eventName:</div>
           <div className="field-value">
-            {item.eventName}
+            {primaryEvent.eventName}
           </div>
           
           <div className="field-label">index:</div>
           <div className="field-value">
-            {item.index}
+            {primaryEvent.index}
           </div>
           
           <div className="field-label">userToken:</div>
-          <div className={`field-value ${!item.userToken ? 'warning' : ''}`}>
+          <div className={`field-value ${!primaryEvent.userToken ? 'warning' : ''}`}>
             <div className="field-warning">
-              {item.userToken || 'missing'}
-              {!item.userToken && <AlertTriangle className="warning-icon" />}
+              {primaryEvent.userToken || 'missing'}
+              {!primaryEvent.userToken && <AlertTriangle className="warning-icon" />}
             </div>
           </div>
           
           <div className="field-label">queryID:</div>
           <div className="field-value">
-            {item.queryId || 'missing'}
+            {primaryEvent.queryID || 'missing'}
           </div>
           
           <div className="field-label">timestamp:</div>
           <div className="field-value">
-            {new Date(item.time).toLocaleTimeString()}
+            {new Date(primaryEvent.eventTs || insights.ts).toLocaleTimeString()}
           </div>
           
-          {item.objectIDs && item.objectIDs.length > 0 && (
+          {primaryEvent.objectIDs && primaryEvent.objectIDs.length > 0 && (
             <>
               <div className="field-label">objectIDs:</div>
               <div className="field-value">
-                {item.objectIDs.join(', ')}
+                {primaryEvent.objectIDs.join(', ')}
+              </div>
+            </>
+          )}
+          
+          <div className="field-label">events count:</div>
+          <div className="field-value">
+            {insights.events.length}
+          </div>
+        </div>
+      )
+    } else {
+      // Individual InsightsEvent
+      const event = item as InsightsEvent
+      
+      return (
+        <div className="extracted-fields">
+          <div className="field-label">eventType:</div>
+          <div className="field-value">
+            {event.eventType}
+          </div>
+          
+          <div className="field-label">eventName:</div>
+          <div className="field-value">
+            {event.eventName}
+          </div>
+          
+          <div className="field-label">index:</div>
+          <div className="field-value">
+            {event.index}
+          </div>
+          
+          <div className="field-label">userToken:</div>
+          <div className={`field-value ${!event.userToken ? 'warning' : ''}`}>
+            <div className="field-warning">
+              {event.userToken || 'missing'}
+              {!event.userToken && <AlertTriangle className="warning-icon" />}
+            </div>
+          </div>
+          
+          <div className="field-label">queryID:</div>
+          <div className="field-value">
+            {event.queryID || 'missing'}
+          </div>
+          
+          <div className="field-label">timestamp:</div>
+          <div className="field-value">
+            {new Date(event.eventTs || Date.now()).toLocaleTimeString()}
+          </div>
+          
+          {event.objectIDs && event.objectIDs.length > 0 && (
+            <>
+              <div className="field-label">objectIDs:</div>
+              <div className="field-value">
+                {event.objectIDs.join(', ')}
               </div>
             </>
           )}
@@ -103,54 +163,74 @@ export function DetailPanel({ item }: DetailPanelProps) {
   }
 
   const renderRawSnippets = () => {
-    if ('appId' in item) {
+    if ('queries' in item) {
       // Search request
+      const search = item as SearchRequest
+      const primaryQuery = search.queries[0]
+      
       return (
         <div className="raw-snippets">
           <div className="snippet-section">
             <div className="snippet-header">Request Headers</div>
             <div className="snippet-content">
-              {JSON.stringify(item.headers, null, 2)}
+              {JSON.stringify(search.requestHeaders, null, 2)}
             </div>
           </div>
           
           <div className="snippet-section">
             <div className="snippet-header">Request Body</div>
             <div className="snippet-content">
-              {item.rawRequestBody || 'No request body'}
+              {search.requestBody || 'No request body'}
             </div>
           </div>
           
           <div className="snippet-section">
-            <div className="snippet-header">Response Snippet</div>
+            <div className="snippet-header">Response Body</div>
             <div className="snippet-content">
-              {item.responseSnippet}
+              {search.responseBody}
             </div>
           </div>
           
           <div className="snippet-section">
             <div className="snippet-header">Request Parameters</div>
             <div className="snippet-content">
-              {item.params}
+              {primaryQuery.params}
             </div>
           </div>
         </div>
       )
-    } else {
-      // Event request
+    } else if ('events' in item) {
+      // Insights request
+      const insights = item as InsightsRequest
+      const primaryEvent = insights.events[0]
+      
       return (
         <div className="raw-snippets">
           <div className="snippet-section">
             <div className="snippet-header">Event Payload</div>
             <div className="snippet-content">
-              {item.payloadSnippet}
+              {JSON.stringify(primaryEvent, null, 2)}
             </div>
           </div>
           
           <div className="snippet-section">
             <div className="snippet-header">URL</div>
             <div className="snippet-content">
-              {item.url}
+              {insights.url}
+            </div>
+          </div>
+        </div>
+      )
+    } else {
+      // Individual InsightsEvent
+      const event = item as InsightsEvent
+      
+      return (
+        <div className="raw-snippets">
+          <div className="snippet-section">
+            <div className="snippet-header">Event Data</div>
+            <div className="snippet-content">
+              {JSON.stringify(event, null, 2)}
             </div>
           </div>
         </div>

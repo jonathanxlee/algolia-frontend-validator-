@@ -3,6 +3,7 @@ import { BatchHeader } from './batch-header'
 import { SearchCard } from './search-card'
 import { EventCard } from './event-card'
 import type { GroupedTrafficItem } from '../utils/traffic-grouping'
+import type { SearchRequest, InsightsEvent } from '../types'
 
 interface BatchGroupProps {
   batchId: string
@@ -17,14 +18,21 @@ export function BatchGroup({ batchId, count, items, expandedRows, onToggle }: Ba
     <div className="batch-group">
       <BatchHeader batchId={batchId} count={count} level={0} />
       <div className="batch-items">
-        {items.map((item) => {
+        {items.map((item, index) => {
+          // Create unique keys for each item
+          const itemKey = item.type === 'search' 
+            ? `search-${(item.item as any).ts}-${(item.item as any).url}`
+            : item.type === 'event'
+            ? `event-${(item.item as any).id}`
+            : `item-${index}`
+          
           if (item.type === 'search') {
             return (
               <SearchCard 
-                key={item.item.id}
-                search={item.item} 
-                isExpanded={expandedRows.has(item.item.id)}
-                onToggle={() => onToggle(item.item.id)}
+                key={itemKey}
+                search={item.item as SearchRequest} 
+                isExpanded={expandedRows.has(itemKey)}
+                onToggle={() => onToggle(itemKey)}
                 level={item.level}
                 batchId={item.batchId}
                 isLastInGroup={item.isLastInGroup}
@@ -34,10 +42,10 @@ export function BatchGroup({ batchId, count, items, expandedRows, onToggle }: Ba
           } else if (item.type === 'event') {
             return (
               <EventCard 
-                key={item.item.id}
-                event={item.item} 
-                isExpanded={expandedRows.has(item.item.id)}
-                onToggle={() => onToggle(item.item.id)}
+                key={itemKey}
+                event={item.item as InsightsEvent} 
+                isExpanded={expandedRows.has(itemKey)}
+                onToggle={() => onToggle(itemKey)}
                 level={item.level}
                 parentQueryId={item.parentQueryId}
                 batchId={item.batchId}

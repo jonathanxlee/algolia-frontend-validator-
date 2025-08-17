@@ -23,9 +23,11 @@ export function SearchCard({
   isLastInGroup, 
   hasChildren 
 }: SearchCardProps) {
-  const isMultiRequest = search.isMultiRequest
-  const hasQueryId = !!search.queryId
-  const hasUserToken = !!search.userToken
+  // Get the first query for display (in multi-query cases, we'll show the first one)
+  const primaryQuery = search.queries[0]
+  const isMultiRequest = search.queries.length > 1
+  const hasQueryId = !!primaryQuery.queryID
+  const hasUserToken = !!primaryQuery.userToken
   
   return (
     <div 
@@ -41,23 +43,23 @@ export function SearchCard({
           <div className="card-title">
             <span className="request-type">
               {isMultiRequest ? 'Search (Multi)' : 'Search (Single)'}
-              {isMultiRequest && search.requestIndex && search.totalRequests && (
+              {isMultiRequest && (
                 <span className="batch-position">
-                  ({search.requestIndex}/{search.totalRequests})
+                  ({search.queries.length} queries)
                 </span>
               )}
             </span>
             <span className="index-name">
-              {Array.isArray(search.indices) ? search.indices.join(', ') : search.indices}
+              {primaryQuery.index}
             </span>
           </div>
           
           <div className="card-details">
             <div className="query-text">
-              <strong>Query:</strong> "{extractSearchQuery(search.params)}"
+              <strong>Query:</strong> "{extractSearchQuery(primaryQuery.params)}"
             </div>
             {(() => {
-              const additionalParams = extractSearchParams(search.params)
+              const additionalParams = extractSearchParams(primaryQuery.params)
               return additionalParams.length > 0 ? (
                 <div className="query-params">
                   {additionalParams.join(' • ')}
@@ -65,13 +67,13 @@ export function SearchCard({
               ) : null
             })()}
             <span className="query-id">
-              Query ID: {hasQueryId ? search.queryId : 'missing'}
+              Query ID: {hasQueryId ? primaryQuery.queryID : 'missing'}
             </span>
             <span className="user-token">
-              User Token: {hasUserToken ? search.userToken : 'missing'}
+              User Token: {hasUserToken ? primaryQuery.userToken : 'missing'}
             </span>
             <span className="time">
-              {new Date(search.time).toLocaleTimeString()}
+              {new Date(search.ts).toLocaleTimeString()}
             </span>
           </div>
         </div>

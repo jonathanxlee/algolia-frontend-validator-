@@ -5,10 +5,10 @@ import type {
   TabState, 
   SessionConfig, 
   SearchRequest, 
-  EventRequest, 
+  InsightsRequest, 
   Issue, 
   Expectation 
-} from '../shared/types'
+} from '../devtools/types'
 
 const DEFAULT_CONFIG: SessionConfig = {
   searchHosts: [
@@ -36,7 +36,7 @@ interface AppActions {
   
   // Data management
   addSearch: (tabId: number, search: SearchRequest) => void
-  addEvent: (tabId: number, event: EventRequest) => void
+  addEvent: (tabId: number, event: InsightsRequest) => void
   addIssue: (tabId: number, issue: Issue) => void
   addExpectation: (tabId: number, expectation: Expectation) => void
   updateExpectation: (tabId: number, expectationId: string, updates: Partial<Expectation>) => void
@@ -132,9 +132,9 @@ export const useAppStore = create<AppState & AppActions>()(
         const { tabs } = get()
         const tab = tabs[tabId]
         if (tab) {
-          // Check for duplicates in the store
+          // Check for duplicates in the store using URL and timestamp
           const isDuplicate = tab.searches.some(existing => 
-            existing.requestId === search.requestId || existing.id === search.id
+            existing.url === search.url && existing.ts === search.ts
           )
           
           if (isDuplicate) {
@@ -153,13 +153,13 @@ export const useAppStore = create<AppState & AppActions>()(
         }
       },
 
-      addEvent: (tabId: number, event: EventRequest) => {
+      addEvent: (tabId: number, event: InsightsRequest) => {
         const { tabs } = get()
         const tab = tabs[tabId]
         if (tab) {
-          // Check for duplicates in the store
+          // Check for duplicates in the store using URL and timestamp
           const isDuplicate = tab.events.some(existing => 
-            existing.requestId === event.requestId || existing.id === event.id
+            existing.url === event.url && existing.ts === event.ts
           )
           
           if (isDuplicate) {
