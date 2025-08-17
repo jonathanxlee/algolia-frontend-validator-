@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/session.schema.json",
+  "title": "Algolia Insights Validator Session",
+  "type": "object",
+  "required": ["sessionId", "siteId", "pageUrl", "timeRange", "networkRequests"],
+  "additionalProperties": false,
+  "properties": {
+    "sessionId": { "type": "string" },
+    "siteId": { "type": "string" },
+    "pageUrl": { "type": "string", "format": "uri" },
+    "timeRange": {
+      "type": "array",
+      "items": [
+        { "type": "string", "format": "date-time" },
+        { "type": "string", "format": "date-time" }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "contractVersion": { "type": "string" },
+    "networkRequests": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/networkRequest" }
+    }
+  },
+  "$defs": {
+    "networkRequest": {
+      "type": "object",
+      "required": [
+        "ts",
+        "type",
+        "url",
+        "method",
+        "requestHeaders",
+        "requestBody",
+        "responseStatus",
+        "responseHeaders",
+        "responseBody"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ts": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["search_request", "insights_request"] },
+        "url": { "type": "string", "format": "uri" },
+        "method": { "type": "string", "enum": ["GET", "POST"] },
+        "appId": { "type": "string" },
+
+        "requestHeaders": { "type": "object", "additionalProperties": { "type": "string" } },
+        "requestBody": { "type": "string" },
+
+        "responseStatus": { "type": "integer", "minimum": 100, "maximum": 599 },
+        "responseHeaders": { "type": "object", "additionalProperties": { "type": "string" } },
+        "responseBody": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "search_request" } } },
+          "then": { "$ref": "#/$defs/searchRequest" }
+        },
+        {
+          "if": { "properties": { "type": { "const": "insights_request" } } },
+          "then": { "$ref": "#/$defs/insightsRequest" }
+        }
+      ]
+    },
+
+    "searchRequest": {
+      "type": "object",
+      "required": ["queries"],
+      "additionalProperties": true,
+      "properties": {
+        "queries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/query" }
+        }
+      }
+    },
+
+    "query": {
+      "type": "object",
+      "required": ["id", "index", "params"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "subId": { "type": "integer", "minimum": 0 },
+        "time": { "type": "string", "format": "date-time" },
+
+        "index": { "type": "string" },
+        "params": { "type": "string" },
+
+        "paramsParsed": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "query": { "type": "string" },
+            "userToken": { "type": "string" },
+            "hitsPerPage": { "type": "integer" },
+            "filters": { "type": "string" },
+            "facets": { "type": "array", "items": { "type": "string" } },
+            "clickAnalytics": { "type": "boolean" },
+            "distinct": { "type": ["integer", "boolean"] },
+            "attributeForDistinct": { "type": "string" },
+            "sortBy": { "type": "string" }
+          }
+        },
+
+        "queryID": { "type": "string" },
+        "userToken": { "type": "string" },
+        "clickAnalytics": { "type": "boolean" }
+      }
+    },
+
+    "insightsRequest": {
+      "type": "object",
+      "required": ["events"],
+      "additionalProperties": true,
+      "properties": {
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/insightsEvent" }
+        }
+      }
+    },
+
+    "insightsEvent": {
+      "type": "object",
+      "required": ["id", "eventType", "eventName", "index", "objectIDs"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "eventTs": { "type": "string", "format": "date-time" },
+        "eventType": { "type": "string", "enum": ["click", "conversion", "view"] },
+        "eventName": { "type": "string" },
+        "index": { "type": "string" },
+        "objectIDs": { "type": "array", "items": { "type": "string" } },
+        "positions": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+        "queryID": { "type": "string" },
+        "userToken": { "type": "string" }
+      }
+    }
+  }
+}

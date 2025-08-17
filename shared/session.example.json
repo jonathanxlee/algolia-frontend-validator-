@@ -1,0 +1,63 @@
+{
+  "session_id": "sess_12345",
+  "site_id": "myshop.com",
+  "page_url": "https://myshop.com/search?q=shoes",
+  "time_range": [
+    "2025-08-15T10:15:00Z",
+    "2025-08-15T10:17:45Z"
+  ],
+  "contract_version": "1.0.0",
+  "events": [
+    {
+      "ts": "2025-08-15T10:15:02Z",
+      "type": "search_request",
+      "url": "https://myshop.com/algolia/search",
+      "index": "products",
+      "request_id": "req_001",
+      "batch_id": "batch_001",
+      "sub_id": 0,
+      "is_batch": false,
+      "params": {
+        "query": "shoes",
+        "hitsPerPage": 20,
+        "filters": "category:footwear",
+        "facets": ["brand", "size"],
+        "clickAnalytics": true,
+        "distinct": 1,
+        "attributeForDistinct": "product_id",
+        "sortBy": "price:asc"
+      }
+    },
+    {
+      "ts": "2025-08-15T10:15:02Z",
+      "type": "search_response",
+      "url": "https://myshop.com/algolia/search",
+      "index": "products",
+      "request_id": "req_001",
+      "batch_id": "batch_001",
+      "sub_id": 0,
+      "status": 200,
+      "processingTimeMS": 12,
+      "nbHits": 145,
+      "hitsPerPage": 20,
+      "queryID": "q123abc"
+    },
+    {
+      "ts": "2025-08-15T10:16:12Z",
+      "type": "insights_event",
+      "url": "https://insights.algolia.io/1/events",
+      "event_type": "click",
+      "event_name": "Product Clicked",
+      "index": "products",
+      "objectIDs": ["prod_001"],
+      "positions": [3],
+      "queryID": "q123abc"
+    },
+    {
+      "ts": "2025-08-15T10:17:12Z",
+      "type": "navigation",
+      "from": "https://myshop.com/search?q=shoes",
+      "to": "https://myshop.com/product/prod_001"
+    }
+  ]
+}
